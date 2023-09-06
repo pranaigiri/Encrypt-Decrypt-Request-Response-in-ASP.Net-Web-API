@@ -1,7 +1,9 @@
 ﻿using EncryptDecrypt.API.Helper;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using System.Text.Json;
 
 namespace EncryptDecrypt.API.Controllers
 {
@@ -16,15 +18,34 @@ namespace EncryptDecrypt.API.Controllers
         }
 
 
+
         [HttpPost]
         [Route("Encrypt")]
-        public IActionResult EncryptData([FromBody] object data)
+        public IActionResult EncryptData([FromBody] dynamic data)
         {
-            string text = data.ToString()!;
-            string encrypted = _encryptDecryptHelper.Encrypt(text);
-            return Ok(encrypted);
-        }
+            try
+            {
+                string jsonString;
 
+                if (data is JsonElement jsonElement)
+                {
+                    // data is a JSON object (JsonElement)
+                    jsonString = jsonElement.ToString();
+                }
+                else
+                {
+                    // data is not a JSON object, so treat it as-is
+                    jsonString = JsonConvert.SerializeObject(data);
+                }
+
+                string encrypted = _encryptDecryptHelper.Encrypt(jsonString);
+                return Ok(encrypted);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest($"Error: {ex.Message}");
+            }
+        }
 
         [HttpPost]
         [Route("Decrypt")]
